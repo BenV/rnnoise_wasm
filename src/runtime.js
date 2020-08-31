@@ -1,6 +1,11 @@
 {
+    const simd = WebAssembly.validate(new Uint8Array([
+        0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3,
+        2, 1, 0, 10, 9, 1, 7, 0, 65, 0, 253, 15, 26, 11
+    ]));
+    const wasmFilename = simd ? "rnnoise-processor-simd.wasm" : "rnnoise-processor.wasm";
     const base = document.currentScript.src.match(/(.*\/)?/)[0],
-        compilation = (WebAssembly.compileStreaming || (async f => await WebAssembly.compile(await (await f).arrayBuffer())))(fetch(base + "rnnoise-processor.wasm"));
+        compilation = (WebAssembly.compileStreaming || (async f => await WebAssembly.compile(await (await f).arrayBuffer())))(fetch(base + wasmFilename));
     let module, instance, heapFloat32;
     window.RNNoiseNode = (window.AudioWorkletNode || (window.AudioWorkletNode = window.webkitAudioWorkletNode)) &&
         class extends AudioWorkletNode {
@@ -9,7 +14,7 @@
                 await context.audioWorklet.addModule(base + "rnnoise-processor.js");
             }
 
-            constructor(context) {
+            constructor(context, options) {
                 super(context, "rnnoise", {
                     channelCountMode: "explicit",
                     channelCount: 1,
@@ -18,8 +23,9 @@
                     numberOfOutputs: 1,
                     outputChannelCount: [1],
                     processorOptions: {
-                        module: module
-                    }
+                        module: module,
+                        ...options,
+                    },
                 });
                 this.port.onmessage = ({ data }) => {
                     const e = Object.assign(new Event("status"), data);

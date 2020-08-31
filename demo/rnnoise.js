@@ -14,6 +14,7 @@ if (navigator.mediaDevices &&
                     output = document.getElementById("output"),
                     start = document.getElementById("start"),
                     vadProb = document.getElementById("vadProb"),
+                    model = document.getElementById("model"),
                     sink = Audio.prototype.setSinkId;
                 input.disabled = false;
                 if (sink)
@@ -63,7 +64,7 @@ if (navigator.mediaDevices &&
                             }),
                             RNNoiseNode.register(context)
                         ]), source = context.createMediaStreamSource(stream),
-                            rnnoise = new RNNoiseNode(context);
+                            rnnoise = new RNNoiseNode(context, { model: model.value });
                         rnnoise.connect(destination);
                         source.connect(rnnoise);
                         rnnoise.onstatus = data => { vadProb.style.width = data.vadProb * 100 + "%"; };

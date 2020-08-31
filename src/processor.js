@@ -1,5 +1,15 @@
 {
+    const models = [
+        "orig",
+        "cb",
+        "mp",
+        "bd",
+        "lq",
+        "sh",
+    ];
+
     let instance, heapFloat32;
+
     registerProcessor("rnnoise", class extends AudioWorkletProcessor {
         constructor(options) {
             super({
@@ -10,7 +20,10 @@
             });
             if (!instance)
                 heapFloat32 = new Float32Array((instance = new WebAssembly.Instance(options.processorOptions.module).exports).memory.buffer);
-            this.state = instance.newState();
+
+            const model = options.processorOptions.model || "";
+            const stateFn = instance["newState" + model] || instance.newState;
+            this.state = stateFn();
             this.alive = true;
             this.port.onmessage = ({ data: keepalive }) => {
                 if (this.alive) {
