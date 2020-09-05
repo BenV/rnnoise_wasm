@@ -12,7 +12,7 @@ mkdir -p dist
     src/processor.js
 emcc \
     -s ENVIRONMENT=worker \
-    -s TOTAL_STACK=49152 -s TOTAL_MEMORY=589824 \
+    -s TOTAL_STACK=49152 -s TOTAL_MEMORY=327680 \
     -g0 -O3 --no-entry -Wno-null-dereference \
     -o dist/rnnoise-processor.wasm \
     -Irnnoise/include \
@@ -26,7 +26,7 @@ emcc \
     src/worklet.c
 emcc \
     -s ENVIRONMENT=worker \
-    -s TOTAL_STACK=49152 -s TOTAL_MEMORY=589824 \
+    -s TOTAL_STACK=49152 -s TOTAL_MEMORY=327680 \
     -g0 -O3 -msimd128 -msse --no-entry -Wno-null-dereference \
     -o dist/rnnoise-processor-simd.wasm \
     -Irnnoise/include \

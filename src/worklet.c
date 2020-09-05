@@ -21,7 +21,6 @@ struct State *EMSCRIPTEN_KEEPALIVE newState()
 {
     struct State *s = malloc(sizeof(struct State));
     memset(s, 0, sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
     s->state = rnnoise_create((RNNModel*)&model_orig);
     return s;
 }
