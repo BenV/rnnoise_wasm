@@ -23,11 +23,6 @@ emcc \
     rnnoise/src/pitch.c \
     rnnoise/src/rnn.c \
     rnnoise/src/rnn_data.c \
-    rnnoise/src/models/bd.c \
-    rnnoise/src/models/cb.c \
-    rnnoise/src/models/lq.c \
-    rnnoise/src/models/mp.c \
-    rnnoise/src/models/sh.c \
     src/worklet.c
 emcc \
     -s ENVIRONMENT=worker \
@@ -42,9 +37,4 @@ emcc \
     rnnoise/src/pitch.c \
     rnnoise/src/rnn.c \
     rnnoise/src/rnn_data.c \
-    rnnoise/src/models/bd.c \
-    rnnoise/src/models/cb.c \
-    rnnoise/src/models/lq.c \
-    rnnoise/src/models/mp.c \
-    rnnoise/src/models/sh.c \
     src/worklet.c

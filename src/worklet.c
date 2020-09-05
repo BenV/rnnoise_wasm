@@ -8,13 +8,7 @@
 
 static const float scale = -INT16_MIN;
 
-extern const struct RNNModel
-    model_orig,
-    model_cb,
-    model_mp,
-    model_bd,
-    model_lq,
-    model_sh;
+extern const struct RNNModel model_orig;
 
 struct State
 {
@@ -26,6 +20,7 @@ struct State
 struct State *EMSCRIPTEN_KEEPALIVE newState()
 {
     struct State *s = malloc(sizeof(struct State));
+    memset(s, 0, sizeof(struct State));
     s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
     s->state = rnnoise_create((RNNModel*)&model_orig);
     return s;
@@ -33,7 +28,7 @@ struct State *EMSCRIPTEN_KEEPALIVE newState()
 
 // These models were getting optimized out when using any sort of conditional causing an
 // access violation. This is cheesy, but resolves that issue.
-struct State *EMSCRIPTEN_KEEPALIVE newStateCb()
+/*struct State *EMSCRIPTEN_KEEPALIVE newStateCb()
 {
     struct State *s = malloc(sizeof(struct State));
     s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
@@ -72,7 +67,7 @@ struct State *EMSCRIPTEN_KEEPALIVE newStateSh()
     s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
     s->state = rnnoise_create((RNNModel*)&model_cb);
     return s;
-}
+}*/
 
 void EMSCRIPTEN_KEEPALIVE deleteState(struct State *const state)
 {

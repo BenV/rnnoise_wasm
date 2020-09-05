@@ -28,38 +28,36 @@
                     },
                 });
                 this.port.onmessage = ({ data }) => {
-                    const e = Object.assign(new Event("status"), data);
-                    this.dispatchEvent(e);
                     if (this.onstatus)
-                        this.onstatus(e);
+                        this.onstatus(data);
                 };
             }
 
             update(keepalive) { this.port.postMessage(keepalive); }
         } ||
         (window.ScriptProcessorNode || (window.ScriptProcessorNode = window.webkitScriptProcessorNode)) &&
-        Object.assign(function (context) {
-            const processor = context.createScriptProcessor(512, 1, 1), state = instance.newState();
+        Object.assign(function (context, options) {
+            const model = options.model || "";
+            const bufferSize = options.bufferSize || 1024;
+            const stateFn = instance["newState" + model] || instance.newState;
+            const processor = context.createScriptProcessor(bufferSize, 1, 1), state = stateFn();
             let alive = true;
             processor.onaudioprocess = ({ inputBuffer, outputBuffer }) => {
-                if (alive) {
-                    heapFloat32.set(inputBuffer.getChannelData(0), instance.getInput(state) / 4);
-                    const o = outputBuffer.getChannelData(0), ptr4 = instance.pipe(state, o.length) / 4;
-                    if (ptr4)
-                        o.set(heapFloat32.subarray(ptr4, ptr4 + o.length));
+                const input = inputBuffer.getChannelData(0);
+                const output = outputBuffer.getChannelData(0);
+                if (alive && input && output && input.length && output.length) {
+                    heapFloat32.set(input, instance.getInput(state) / 4);
+                    const ptr4 = instance.pipe(state, output.length) / 4;
+                    if (ptr4 && output)
+                        output.set(heapFloat32.subarray(ptr4, ptr4 + output.length));
+                    if (processor.onstatus)
+                        processor.onstatus({ vadProb: instance.getVadProb(state) });
                 }
             };
             processor.update = keepalive => {
-                if (alive) {
-                    if (keepalive) {
-                        const e = Object.assign(new Event("status"), { vadProb: instance.getVadProb(state) });
-                        processor.dispatchEvent(e);
-                        if (processor.onstatus)
-                            processor.onstatus(e);
-                    } else {
-                        alive = false;
-                        instance.deleteState(state);
-                    }
+                if (alive && !keepalive) {
+                    alive = false;
+                    instance.deleteState(state);
                 }
             };
             return processor;
