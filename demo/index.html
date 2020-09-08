@@ -24,12 +24,27 @@
                 <td><a href="https://github.com/GregorR/rnnoise-models" target="_blank">Model</a></td>
                 <td><select id="model">
                     <option value="orig" selected>General/Speech</option>
-                    <!--<option value="Mp">General/General</option>
-                    <option value="Lq">General/Voice</option>
-                    <option value="Cb">Recording/General</option>
-                    <option value="Bd">Recording/Voice</option>
-                    <option value="Sh">Recording/Speech</option>-->
                 </select></td>
+            </tr>
+            <tr>
+                <td>Filter Noise</td>
+                <td><input id="filter" type="checkbox" checked></input></td>
+            </tr>
+            <tr>
+                <td>VAD Threshold</td>
+                <td><input id="threshold" type="number" max="1" min="0.0" step="0.05" value="0.5"></input></td>
+            </tr>
+            <tr>
+                <td>VAD Time Cutoff (Seconds)</td>
+                <td><input id="cutoff" type="number" max="1" min="0.0" step="0.05" value="0.25"></input></td>
+            </tr>
+            <tr>
+                <td>VAD Max Attenuation</td>
+                <td><input id="vadmaxattenuation" type="number" max="1" min="0.0" step="0.05" value="0.9"></input></td>
+            </tr>
+            <tr>
+                <td>Max Attenuation (db)</td>
+                <td><input id="maxattenuation" type="number" max="60" min="0" step="1" value="0"></input></td>
             </tr>
             <tr>
                 <td>Buffer Size (Safari)</td>
@@ -55,10 +70,25 @@
                     <div id="vadProb"></div>
                 </td>
             </tr>
+            <tr>
+                <td>Attenuation</td>
+                <td class="full">
+                    <div id="attenuation"></div>
+                </td>
+            </tr>
         </table>
     </fieldset>
     <script src="../dist/rnnoise-runtime.js"></script>
     <script src="rnnoise.js"></script>
+    <hr>
+    Parameters:
+    <ul>
+        <li>Filter Noise - Whether or not to use the RNNoise filter on the audio output</li>
+        <li>VAD Threshold - Output will be attenuated if voice activity probability is below this threshold. Setting this value to zero disables VAD attenuation.</li>
+        <li>VAD Time Cutoff - Amount of time voice probability has to be below the threshold before attenuation starts</li>
+        <li>VAD Max Attenuation - Maximum percentage of attenuation to perform based on VAD</li>
+        <li>Max Attenuation - The maximum attenuation to perform in dB during noise cancellation. Specifying 0 disables this feature</li>
+    </ul>
     <hr>
     Can I use
     <a href="https://caniuse.com/#feat=mdn-api_mediadevices">MediaDevices API</a> and

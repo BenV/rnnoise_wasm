@@ -16,6 +16,12 @@ if (navigator.mediaDevices &&
                     stop = document.getElementById("stop"),
                     vadProb = document.getElementById("vadProb"),
                     model = document.getElementById("model"),
+                    vadThreshold = document.getElementById("threshold"),
+                    vadCutoff = document.getElementById("cutoff"),
+                    vadMaxAttenuation = document.getElementById("vadmaxattenuation"),
+                    filterNoise = document.getElementById("filter"),
+                    attenuation = document.getElementById("attenuation"),
+                    maxAttenuation = document.getElementById("maxattenuation"),
                     bufferSize = document.getElementById("buffer");
                     sink = Audio.prototype.setSinkId;
                 let rnnoise, context;
@@ -67,10 +73,24 @@ if (navigator.mediaDevices &&
                             }),
                             RNNoiseNode.register(context)
                         ]), source = context.createMediaStreamSource(stream);
-                        rnnoise = new RNNoiseNode(context, { model: model.value, bufferSize: Number(bufferSize.value) });
-                        rnnoise.connect(destination);
+                        rnnoise = new RNNoiseNode(context, {
+                            model: model.value,
+                            bufferSize: Number(bufferSize.value),
+                            filterNoise: filterNoise.checked,
+                            maxAttenuation: Number(maxattenuation.value),
+                            vadThreshold: Number(vadThreshold.value),
+                            vadCutoffTime: vadCutoff.value,
+                            vadMaxAttenuation: vadMaxAttenuation.value
+                        });
+                        const gain = context.createGain();
+                        gain.gain.value = 0.9;
+                        rnnoise.connect(gain);
+                        gain.connect(destination);
                         source.connect(rnnoise);
-                        rnnoise.onstatus = data => { vadProb.style.width = data.vadProb * 100 + "%"; };
+                        rnnoise.onstatus = data => {
+                            vadProb.style.width = data.vadProb * 100 + "%";
+                            attenuation.style.width = data.attenuation * 100 + "%";
+                        };
                         stop.disabled = false;
                     } catch (e) {
                         context.close();

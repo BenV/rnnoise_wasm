@@ -1,5 +1,6 @@
 #include <emscripten.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <rnnoise-nu.h>
 
@@ -12,7 +13,7 @@ extern const struct RNNModel model_orig;
 
 struct State
 {
-    float buffer[MAX_FRAME_SIZE * 2], vad_prob;
+    float buffer[MAX_FRAME_SIZE * 2], vad_buffer[MAX_FRAME_SIZE * 2], vad_prob;
     size_t input, processed, output, buffering, latency;
     DenoiseState *state;
 };
@@ -25,53 +26,15 @@ struct State *EMSCRIPTEN_KEEPALIVE newState()
     return s;
 }
 
-// These models were getting optimized out when using any sort of conditional causing an
-// access violation. This is cheesy, but resolves that issue.
-/*struct State *EMSCRIPTEN_KEEPALIVE newStateCb()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}
-
-
-struct State *EMSCRIPTEN_KEEPALIVE newStateMp()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}
-
-struct State *EMSCRIPTEN_KEEPALIVE newStateBd()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}
-
-struct State *EMSCRIPTEN_KEEPALIVE newStateLq()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}
-
-struct State *EMSCRIPTEN_KEEPALIVE newStateSh()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}*/
-
 void EMSCRIPTEN_KEEPALIVE deleteState(struct State *const state)
 {
     rnnoise_destroy(state->state);
     free(state);
+}
+
+void EMSCRIPTEN_KEEPALIVE setMaxAttenuation(struct State *const state, float value) {
+    value = pow(10, -value/10);
+    rnnoise_set_param(state->state, RNNOISE_PARAM_MAX_ATTENUATION, value);
 }
 
 float *EMSCRIPTEN_KEEPALIVE getInput(struct State *const state)
@@ -99,14 +62,16 @@ float *EMSCRIPTEN_KEEPALIVE pipe(struct State *const state, size_t length)
     // Processes
     while (state->processed + FRAME_SIZE <= state->input)
     {
-        state->vad_prob = rnnoise_process_frame(state->state, &state->buffer[state->processed], &state->buffer[state->processed]);
+        float vad_prob = rnnoise_process_frame(state->state, &state->buffer[state->processed], &state->buffer[state->processed]);
+        for (size_t i = 0; i < FRAME_SIZE; i++) state->vad_buffer[state->processed + i] = vad_prob;
         state->processed += FRAME_SIZE;
     }
     // Buffers
-    if (state->output + state->latency > state->processed)
+    if (state->output + length > state->processed)
         return NULL;
     state->latency = length;
     size_t o = state->output;
+    state->vad_prob = state->vad_buffer[o];
     // Scales output
     for (size_t end = state->output + length; state->output < end; ++state->output)
         state->buffer[state->output] /= scale;
