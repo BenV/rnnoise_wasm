@@ -9,8 +9,6 @@
 
 static const float scale = -INT16_MIN;
 
-extern const struct RNNModel model_orig;
-
 struct State
 {
     float buffer[MAX_FRAME_SIZE * 2], vad_buffer[MAX_FRAME_SIZE * 2], vad_prob;
@@ -18,11 +16,13 @@ struct State
     DenoiseState *state;
 };
 
-struct State *EMSCRIPTEN_KEEPALIVE newState()
+struct State *EMSCRIPTEN_KEEPALIVE newState(int model_index)
 {
     struct State *s = malloc(sizeof(struct State));
     memset(s, 0, sizeof(struct State));
-    s->state = rnnoise_create((RNNModel*)&model_orig);
+    const char** models = rnnoise_models();
+    RNNModel* model = rnnoise_get_model(models[model_index]);
+    s->state = rnnoise_create(model);
     return s;
 }
 

@@ -22,11 +22,10 @@
             if (!instance)
                 heapFloat32 = new Float32Array((instance = new WebAssembly.Instance(options.processorOptions.module).exports).memory.buffer);
 
-            const model = options.processorOptions.model || "";
-            const stateFn = instance["newState" + model] || instance.newState;
+            const model = Number(options.processorOptions.model) || 0;
             const maxAttenuation = options.processorOptions.maxAttenuation;
             if (this.state) instance.deleteState(this.state);
-            this.state = stateFn();
+            this.state = instance.newState(model);
             if (maxAttenuation) instance.setMaxAttenuation(maxAttenuation);
 
             this.alive = true;
