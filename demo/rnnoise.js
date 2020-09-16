@@ -18,7 +18,7 @@ if (navigator.mediaDevices &&
                     model = document.getElementById("model"),
                     bufferSize = document.getElementById("buffer");
                     sink = Audio.prototype.setSinkId;
-                let rnnoise, context;
+                let rnnoise, context, source;
                 input.disabled = false;
                 if (sink)
                     output.disabled = false;
@@ -66,8 +66,13 @@ if (navigator.mediaDevices &&
                                 }
                             }),
                             RNNoiseNode.register(context)
-                        ]), source = context.createMediaStreamSource(stream);
-                        rnnoise = new RNNoiseNode(context, { model: model.value, bufferSize: Number(bufferSize.value) });
+                        ]);
+                        source = context.createMediaStreamSource(stream);
+                        rnnoise = new RNNoiseNode(context, {
+                            model: model.value,
+                            bufferSize: Number(bufferSize.value),
+                            sampleRate: context.sampleRate || 48000,
+                        });
                         rnnoise.connect(destination);
                         source.connect(rnnoise);
                         rnnoise.onstatus = data => { vadProb.style.width = data.vadProb * 100 + "%"; };
@@ -78,9 +83,11 @@ if (navigator.mediaDevices &&
                     }
                 });
 
-                stop.addEventListener("click", () => {
+                stop.addEventListener("click", async () => {
+                    source.disconnect();
+                    rnnoise.disconnect();
                     rnnoise.update(false);
-                    context.close();
+                    await context.close();
                     start.disabled = false;
                     stop.disabled = true;
                 });
