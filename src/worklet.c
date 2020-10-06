@@ -25,49 +25,6 @@ struct State *EMSCRIPTEN_KEEPALIVE newState()
     return s;
 }
 
-// These models were getting optimized out when using any sort of conditional causing an
-// access violation. This is cheesy, but resolves that issue.
-/*struct State *EMSCRIPTEN_KEEPALIVE newStateCb()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}
-
-
-struct State *EMSCRIPTEN_KEEPALIVE newStateMp()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}
-
-struct State *EMSCRIPTEN_KEEPALIVE newStateBd()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}
-
-struct State *EMSCRIPTEN_KEEPALIVE newStateLq()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}
-
-struct State *EMSCRIPTEN_KEEPALIVE newStateSh()
-{
-    struct State *s = malloc(sizeof(struct State));
-    s->vad_prob = s->latency = s->buffering = s->output = s->processed = s->input = 0;
-    s->state = rnnoise_create((RNNModel*)&model_cb);
-    return s;
-}*/
-
 void EMSCRIPTEN_KEEPALIVE deleteState(struct State *const state)
 {
     rnnoise_destroy(state->state);
@@ -88,6 +45,11 @@ float *EMSCRIPTEN_KEEPALIVE getInput(struct State *const state)
 
 float EMSCRIPTEN_KEEPALIVE getVadProb(const struct State *const state) { return state->vad_prob; }
 
+void EMSCRIPTEN_KEEPALIVE setSampleRate(const struct State*const state, int rate)
+{
+    rnnoise_set_param(state->state, RNNOISE_PARAM_SAMPLE_RATE, rate);
+}
+
 float *EMSCRIPTEN_KEEPALIVE pipe(struct State *const state, size_t length)
 {
     // Increases latency
@@ -103,7 +65,7 @@ float *EMSCRIPTEN_KEEPALIVE pipe(struct State *const state, size_t length)
         state->processed += FRAME_SIZE;
     }
     // Buffers
-    if (state->output + state->latency > state->processed)
+    if (state->output + length > state->processed)
         return NULL;
     state->latency = length;
     size_t o = state->output;

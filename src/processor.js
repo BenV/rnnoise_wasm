@@ -13,10 +13,13 @@
                 heapFloat32 = new Float32Array((instance = new WebAssembly.Instance(options.processorOptions.module).exports).memory.buffer);
 
             const model = options.processorOptions.model || "";
+            const sampleRate = options.processorOptions.sampleRate || 48000;
             const stateFn = instance["newState" + model] || instance.newState;
             if (this.state) instance.deleteState(this.state);
             this.state = stateFn();
             this.alive = true;
+            instance.setSampleRate(this.state, sampleRate);
+
             this.port.onmessage = ({ data: keepalive }) => {
                 if (this.alive) {
                     if (keepalive) {

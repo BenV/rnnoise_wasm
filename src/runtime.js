@@ -38,14 +38,17 @@
         (window.ScriptProcessorNode || (window.ScriptProcessorNode = window.webkitScriptProcessorNode)) &&
         Object.assign(function (context, options) {
             const model = options.model || "";
-            const bufferSize = options.bufferSize || 1024;
+            const bufferSize = options.bufferSize || 4096;
             const stateFn = instance["newState" + model] || instance.newState;
-            const processor = context.createScriptProcessor(bufferSize, 1, 1), state = stateFn();
+            const processor = context.createScriptProcessor(bufferSize, 1, 1);
+            let state = stateFn();
+            const sampleRate = options.sampleRate || 48000;
+            instance.setSampleRate(state, sampleRate);
             let alive = true;
             processor.onaudioprocess = ({ inputBuffer, outputBuffer }) => {
                 const input = inputBuffer.getChannelData(0);
                 const output = outputBuffer.getChannelData(0);
-                if (alive && input && output && input.length && output.length) {
+                if (state && alive && input && output && input.length && output.length) {
                     heapFloat32.set(input, instance.getInput(state) / 4);
                     const ptr4 = instance.pipe(state, output.length) / 4;
                     if (ptr4 && output)
@@ -55,9 +58,10 @@
                 }
             };
             processor.update = keepalive => {
-                if (alive && !keepalive) {
+                if (alive && !keepalive && state) {
                     alive = false;
                     instance.deleteState(state);
+                    state = null;
                 }
             };
             return processor;
